@@ -1,0 +1,79 @@
+name: basic_RNN
+channels: !!python/tuple
+- obspy
+- conda-forge
+- anaconda-fusion
+- defaults
+dependencies:
+- conda-forge::bleach=1.5.0=py35_0
+- conda-forge::ca-certificates=2017.1.23=1
+- conda-forge::certifi=2017.4.17=py35_0
+- conda-forge::colorama=0.3.9=py35_0
+- conda-forge::decorator=4.0.11=py35_0
+- conda-forge::entrypoints=0.2.2=py35_1
+- conda-forge::html5lib=0.999=py35_0
+- conda-forge::icu=58.1=vc14_1
+- conda-forge::ipykernel=4.6.1=py35_0
+- conda-forge::ipython=6.0.0=py35_0
+- conda-forge::ipython_genutils=0.2.0=py35_0
+- conda-forge::ipywidgets=6.0.0=py35_0
+- conda-forge::jedi=0.10.0=py35_0
+- conda-forge::jinja2=2.9.5=py35_0
+- conda-forge::jpeg=9b=vc14_0
+- conda-forge::jsonschema=2.5.1=py35_0
+- conda-forge::jupyter=1.0.0=py35_0
+- conda-forge::jupyter_client=5.0.1=py35_0
+- conda-forge::jupyter_console=5.1.0=py35_0
+- conda-forge::jupyter_core=4.3.0=py35_0
+- conda-forge::libpng=1.6.28=vc14_0
+- conda-forge::markupsafe=0.23=py35_1
+- conda-forge::mistune=0.7.4=py35_0
+- conda-forge::mock=2.0.0=py35_0
+- conda-forge::nbconvert=5.1.1=py35_1
+- conda-forge::nbformat=4.3.0=py35_0
+- conda-forge::notebook=5.0.0=py35_0
+- conda-forge::openssl=1.0.2h=vc14_3
+- conda-forge::pandoc=1.19.2=0
+- conda-forge::pandocfilters=1.4.1=py35_0
+- conda-forge::pbr=3.0.0=py35_0
+- conda-forge::pickleshare=0.7.3=py35_0
+- conda-forge::pip=9.0.1=py35_0
+- conda-forge::prompt_toolkit=1.0.14=py35_0
+- conda-forge::protobuf=3.3.0=py35_vc14_0
+- conda-forge::pygments=2.2.0=py35_0
+- conda-forge::pyqt=5.6.0=py35_2
+- conda-forge::python=3.5.2=5
+- conda-forge::python-dateutil=2.6.0=py35_0
+- conda-forge::pyzmq=16.0.2=py35_2
+- conda-forge::qt=5.6.2=vc14_1
+- conda-forge::qtconsole=4.3.0=py35_0
+- conda-forge::setuptools=33.1.1=py35_0
+- conda-forge::simplegeneric=0.8.1=py35_0
+- conda-forge::sip=4.18=py35_1
+- conda-forge::six=1.10.0=py35_1
+- conda-forge::tensorflow=1.0.0=py35_0
+- conda-forge::testpath=0.3=py35_0
+- conda-forge::tornado=4.5.1=py35_0
+- conda-forge::traitlets=4.3.2=py35_0
+- conda-forge::vc=14=0
+- conda-forge::vs2015_runtime=14.0.25420=0
+- conda-forge::wcwidth=0.1.7=py35_0
+- conda-forge::webencodings=0.5=py35_0
+- conda-forge::wheel=0.29.0=py35_0
+- conda-forge::widgetsnbextension=2.0.0=py35_0
+- conda-forge::win_unicode_console=0.5=py35_0
+- conda-forge::wincertstore=0.2=py35_0
+- conda-forge::zlib=1.2.11=vc14_0
+- mkl=2017.0.1=0
+- numpy=1.12.1=py35_0
+- scikit-learn=0.18.1=np112py35_1
+- scipy=0.19.0=np112py35_0
+- pip:
+  - ipython-genutils==0.2.0
+  - jupyter-client==5.0.1
+  - jupyter-console==5.1.0
+  - jupyter-core==4.3.0
+  - prompt-toolkit==1.0.14
+  - win-unicode-console==0.5
+prefix: C:\Users\msolomon2010\AppData\Local\Continuum\Anaconda3\envs\basic_RNN
+
