@@ -12,9 +12,10 @@ Does not use GPU
 """
 
 """
-TODO: Confirm method names with Kailas when he finishes the model file
-	  Add TensorBoard functionality as well as checkpoints
+TODO: 	Confirm method names with Kailas when he finishes the model file
+	Add TensorBoard functionality as well as checkpoints
 	Add calls to find_sequence_lengths
+	Make confusion matrix rows/cols names of classes
 """
 
 
@@ -72,6 +73,7 @@ def load_data(direc,ratio,dataset):
 
 # Load the desired dataset
 direc = '/home/emilyjensen/repos/project/AMALTHEA_TEAM_5/infra_tflow/src/UCR_TS_Archive_2015'
+# Splits training set into training and validation sets
 ratio = 0.8
 X_train,X_val,X_test,y_train,y_val,y_test = load_data(direc,ratio,dataset='ElectricDevices')
 
