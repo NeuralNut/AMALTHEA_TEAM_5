@@ -12,9 +12,8 @@ Does not use GPU
 """
 
 """
-TODO: 	Confirm method names with Kailas when he finishes the model file
+TODO: 	Confirm feed_dict inputs to model file
 	Add TensorBoard functionality as well as checkpoints
-	Add calls to find_sequence_lengths
 	Make confusion matrix rows/cols names of classes
 """
 
@@ -22,8 +21,7 @@ TODO: 	Confirm method names with Kailas when he finishes the model file
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-
-# from MODELFILE import METHODS
+from model import Model
 
 tf.reset_default_graph()
 
@@ -46,13 +44,14 @@ def find_seq_lengths(X):
 # Define function for loading and splitting data into relevant sets
 def load_data(direc,ratio,dataset):
     """Input:
-        direc: location of the UCR archive
+        direc: location of the data archive
         ratio: ratio to split training set into training and validation
-        dataset: name of the dataset in the UCR archive"""
+        dataset: name of the dataset in the archive"""
     # Define directory of specific dataset
     datadir = direc + '/' + dataset + '/' + dataset
     # Load pre-split training and testing sets
     data_train = np.loadtxt(datadir+'_TRAIN',delimiter=',')
+    data_seq = find_seq_lengths(data_train)
     data_test = np.loadtxt(datadir+'_TEST',delimiter=',')
     # Divide training set into training and validation sets
     # First column of data is class number
@@ -61,21 +60,24 @@ def load_data(direc,ratio,dataset):
     ratio = int(ratio*N)
     np.random.shuffle(data_train)
     X_train = data_train[:ratio,1:]
+    train_seq = data_seq[:ratio]
     y_train = data_train[:ratio,0] - 1
     X_val = data_train[ratio:,1:]
+    val_seq = data_seq[ratio:]
     y_val = data_train[ratio:,0] - 1
     # Permute testing set
     np.random.shuffle(data_test)
     X_test = data_test[:,1:]
+    test_seq = find_seq_lengths(data_test)
     y_test = data_test[:,0] - 1
     
-    return X_train,X_val,X_test,y_train,y_val,y_test
+    return X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test
 
 # Load the desired dataset
 direc = '/home/emilyjensen/repos/project/AMALTHEA_TEAM_5/infra_tflow/src/UCR_TS_Archive_2015'
 # Splits training set into training and validation sets
 ratio = 0.8
-X_train,X_val,X_test,y_train,y_val,y_test = load_data(direc,ratio,dataset='ElectricDevices')
+X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset='ElectricDevices')
 
 #%%
 """Define configuration of hyperparameters"""
@@ -111,25 +113,25 @@ with tf.Session() as sess:
     init.run()
     for epoch in range(epochs):
         # Iterate through each mini-batch once per epoch
-        for (batch_x,batch_y,batch_seq) in create_batches(X_train,y_train,batch_size):
+        for (batch_x,batch_y,batch_seq) in create_batches(X_train,y_train,train_seq,batch_size):
             # Reset accuracy count
             epoch_acc = 0
             # Run training on the batch
-            sess.run(training_op,feed_dict={X:batch_x, y:batch_y,seq_length_batch:batch_seq})
+            sess.run(model.training_op,feed_dict={X:batch_x, y:batch_y,seq_length_batch:batch_seq})
             # Assess and add to accuracy count
             epoch_acc += accuracy.eval(feed_dict={X:batch_x, y:batch_y}) * batch_x.shape[0]
         # After going through each mini-batch, test against validation set
-        validation_acc = accuracy.eval(feed_dict={X:X_val,y:y_val})
+        validation_acc = model.accuracy.eval(feed_dict={X:X_val,y:y_val})
         # Calculate cost of validation set
-        validation_cost = cost.eval(feed_dict={X:X_val,y:y_val})
+        validation_cost = model.cost.eval(feed_dict={X:X_val,y:y_val})
         # Print accuracy and cost updates for each epoch
         print('#',epoch,'Epoch train accuracy:',epoch_acc/X_train.size[0],'Validation accuracy:',validation_acc,'Validation cost:',validation_cost)
         # Shuffle samples for next epoch
         np.random.shuffle(X_train)
     # Calculate cost and accuracy for final test set
-    test_acc = accuracy.eval(feed_dict={X:X_test,y:y_test})
-    test_cost = cost.eval(feed_dict={X:X_test,y:y_test})
-    test_prediction = return_classification.eval(feed_dict={X:X_test})
+    test_acc = model.accuracy.eval(feed_dict={X:X_test,y:y_test})
+    test_cost = model.cost.eval(feed_dict={X:X_test,y:y_test})
+    test_prediction = model.return_classification.eval(feed_dict={X:X_test})
 
 """Display results"""
 print('Final accuracy:',test_acc,'Final cost:',test_cost)

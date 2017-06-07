@@ -3,7 +3,6 @@
 
 """Construction"""
 
-import numpy as np
 import tensorflow as tf
 
 class Model():
@@ -77,7 +76,7 @@ class Model():
             gradients = optimizer.compute_gradients(cost)
             
             # Capping the gradients using a clipping function
-            capped_gradients = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gradients]
+            capped_gradients = [tf.clip_by_value(grad, clip_value_max=grad_max_abs) for grad in gradients]
 
             # Training and applying the gradients
             training_op = optimizer.apply_gradients(capped_gradients)
