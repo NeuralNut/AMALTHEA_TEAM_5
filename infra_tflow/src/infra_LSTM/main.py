@@ -4,13 +4,24 @@ Created on Mon Jun  5 16:44:02 2017
 
 @author: emilyjensen
 
-Main file to test on UCR datasets.
+Main file to test on UCR and infrasound LSTM datasets.
 Loads data, defines hyperparameters, calls model build, trains model, and prints
 results of training
+
+Does not use GPU
 """
+
+"""
+TODO: Confirm method names with Kailas when he finishes the model file
+	  Add TensorBoard functionality as well as checkpoints
+	Add calls to find_sequence_lengths
+"""
+
 
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
+
 # from MODELFILE import METHODS
 
 tf.reset_default_graph()
@@ -120,3 +131,27 @@ with tf.Session() as sess:
 
 """Display results"""
 print('Final accuracy:',test_acc,'Final cost:',test_cost)
+
+# create confusion matrix to visualize classification errors
+confusion_matrix = tf.confusion_matrix(y_test,test_prediction)
+cf_normed = np.array(confusion_matrix,dtype=np.float32)/np.sum(confusion_matrix) * 100
+width = 12
+height = 12
+plt.figure(figsize=(width,height))
+plt.imshow(
+	cf_normed,
+	interpolation='nearest',
+	cmap=plt.cm.rainbow
+	)
+
+plt.title("Confusion matrix \n(normalised to percent of total test data)")
+plt.colorbar()
+tick_marks = np.arange(num_classes)
+# Make a list of strings of the numbered classes
+LABELS = [str(i+1) for i in range(num_classes)] # Can change later once we have name labels if we want
+plt.xticks(tick_marks, LABELS, rotation=90)
+plt.yticks(tick_marks, LABELS)
+plt.tight_layout()
+plt.ylabel('True label')
+plt.xlabel('Predicted label')
+plt.show()
