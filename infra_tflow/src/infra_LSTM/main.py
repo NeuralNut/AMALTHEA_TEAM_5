@@ -39,7 +39,7 @@ def find_seq_lengths(X):
         while X[i,ind] == 0:
             ind -= 1
         seq_lengths[i] = max_length + ind + 1
-    return seq_lengths
+    return seq_lengths.astype(np.int32)
 
 # Define function for loading and splitting data into relevant sets
 def load_data(direc,ratio,dataset):
@@ -50,9 +50,9 @@ def load_data(direc,ratio,dataset):
     # Define directory of specific dataset
     datadir = direc + '/' + dataset + '/' + dataset
     # Load pre-split training and testing sets
-    data_train = np.loadtxt(datadir+'_TRAIN',delimiter=',')
+    data_train = np.loadtxt(datadir+'_TRAIN',delimiter=',').astype(np.float32)
     data_seq = find_seq_lengths(data_train[:,1:])
-    data_test = np.loadtxt(datadir+'_TEST',delimiter=',')
+    data_test = np.loadtxt(datadir+'_TEST',delimiter=',').astype(np.float32)
     # Divide training set into training and validation sets
     # First column of data is class number
     # Subtract 1 from classes to index from 0
@@ -60,32 +60,35 @@ def load_data(direc,ratio,dataset):
     ratio = int(ratio*N)
     np.random.shuffle(data_train)
     X_train = data_train[:ratio,1:]
+    X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
     train_seq = data_seq[:ratio]
-    y_train = data_train[:ratio,0] - 1
+    y_train = (data_train[:ratio,0] - 1).astype(np.int32)
     X_val = data_train[ratio:,1:]
+    X_val = X_val.reshape(X_val.shape[0], X_val.shape[1], 1)
     val_seq = data_seq[ratio:]
-    y_val = data_train[ratio:,0] - 1
+    y_val = (data_train[ratio:,0] - 1).astype(np.int32)
     # Permute testing set
     np.random.shuffle(data_test)
     X_test = data_test[:,1:]
+    X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
     test_seq = find_seq_lengths(data_test[:,1:])
-    y_test = data_test[:,0] - 1
+    y_test = (data_test[:,0] - 1).astype(np.int32)
     
     return X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test
 
 # Load the desired dataset
-direc = '/home/emilyjensen/repos/project/shared_repo/AMALTHEA_TEAM_5/infra_tflow/src/data/UCR_TS_Archive_2015'
+direc = '/home/likewise-open/FLTECH/msolomon2010/Documents/AMALTHEA_TEAM_5/infra_tflow/src/data/UCR_TS_Archive_2015'
 # Splits training set into training and validation sets
 ratio = 0.8
-X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset='ElectricDevices')
+X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset='ChlorineConcentration')
 
 #%%
 """Define configuration of hyperparameters"""
 # Define hyperparameters also used in this file
-batch_size = 30
+batch_size = np.array(30, dtype=np.int32)
 epochs = 10
-dropout = 0.8
-num_classes = max(y_test) + 1
+dropout = np.array(0.8, dtype=np.float32)
+num_classes = (max(y_test) + 1).astype(np.int32)
 config = {'num_layers':3, # number of hidden LSTM layers
           'hidden_size':120, # number of units in each layer
           'grad_max_abs':5, # cutoff for gradient clipping
@@ -98,7 +101,8 @@ config = {'num_layers':3, # number of hidden LSTM layers
 
 """Create a new model object"""
 model = Model(config)
-
+X = model.input
+y = model.labels
 #%%
 """Train the model"""
 # Define function to divide training data into mini-batches
@@ -119,21 +123,23 @@ with tf.Session() as sess:
             # Reset accuracy count
             epoch_acc = 0
             # Run training on the batch
-            sess.run(model.training_op,feed_dict={X:batch_x, y:batch_y,seq_length_batch:batch_seq})
+            sess.run(model.training_op,feed_dict={X:batch_x, y:batch_y,model.seq_length:batch_seq})
             # Assess and add to accuracy count
-            epoch_acc += accuracy.eval(feed_dict={X:batch_x, y:batch_y}) * batch_x.shape[0]
+            epoch_acc += model.accuracy.eval(feed_dict={X:batch_x, y:batch_y,model.seq_length:batch_seq}) * batch_x.shape[0]
         # After going through each mini-batch, test against validation set
-        validation_acc = model.accuracy.eval(feed_dict={X:X_val,y:y_val})
+        validation_acc = model.accuracy.eval(feed_dict={X:X_val,y:y_val,model.seq_length:val_seq})
         # Calculate cost of validation set
-        validation_cost = model.cost.eval(feed_dict={X:X_val,y:y_val})
+        validation_cost = model.loss.eval(feed_dict={X:X_val,y:y_val,model.seq_length:val_seq})
         # Print accuracy and cost updates for each epoch
-        print('#',epoch,'Epoch train accuracy:',epoch_acc/X_train.size[0],'Validation accuracy:',validation_acc,'Validation cost:',validation_cost)
+        print('#',epoch,'Epoch train accuracy:',epoch_acc/X_train.shape[0],
+              'Validation accuracy:',validation_acc,'Validation cost:',validation_cost)
+
         # Shuffle samples for next epoch
         np.random.shuffle(X_train)
     # Calculate cost and accuracy for final test set
-    test_acc = model.accuracy.eval(feed_dict={X:X_test,y:y_test})
-    test_cost = model.cost.eval(feed_dict={X:X_test,y:y_test})
-    test_prediction = model.return_classification.eval(feed_dict={X:X_test})
+    test_acc = model.accuracy.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
+    test_cost = model.loss.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
+    test_prediction = model.predictions
     
 #%%
 """Display results"""
