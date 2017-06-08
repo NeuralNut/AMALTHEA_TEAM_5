@@ -51,7 +51,7 @@ def load_data(direc,ratio,dataset):
     datadir = direc + '/' + dataset + '/' + dataset
     # Load pre-split training and testing sets
     data_train = np.loadtxt(datadir+'_TRAIN',delimiter=',')
-    data_seq = find_seq_lengths(data_train)
+    data_seq = find_seq_lengths(data_train[:,1:])
     data_test = np.loadtxt(datadir+'_TEST',delimiter=',')
     # Divide training set into training and validation sets
     # First column of data is class number
@@ -68,13 +68,13 @@ def load_data(direc,ratio,dataset):
     # Permute testing set
     np.random.shuffle(data_test)
     X_test = data_test[:,1:]
-    test_seq = find_seq_lengths(data_test)
+    test_seq = find_seq_lengths(data_test[:,1:])
     y_test = data_test[:,0] - 1
     
     return X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test
 
 # Load the desired dataset
-direc = '/home/emilyjensen/repos/project/AMALTHEA_TEAM_5/infra_tflow/src/UCR_TS_Archive_2015'
+direc = '/home/emilyjensen/repos/project/shared_repo/AMALTHEA_TEAM_5/infra_tflow/src/data/UCR_TS_Archive_2015'
 # Splits training set into training and validation sets
 ratio = 0.8
 X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset='ElectricDevices')
@@ -91,7 +91,9 @@ config = {'num_layers':3, # number of hidden LSTM layers
           'grad_max_abs':5, # cutoff for gradient clipping
           'batch_size':batch_size,
           'learning_rate':0.1,
-          'classes':num_classes
+          'classes':num_classes,
+          'dropout_keep_prob':dropout,
+          'sl':X_train.shape[1]
         }
 
 """Create a new model object"""
@@ -132,7 +134,8 @@ with tf.Session() as sess:
     test_acc = model.accuracy.eval(feed_dict={X:X_test,y:y_test})
     test_cost = model.cost.eval(feed_dict={X:X_test,y:y_test})
     test_prediction = model.return_classification.eval(feed_dict={X:X_test})
-
+    
+#%%
 """Display results"""
 print('Final accuracy:',test_acc,'Final cost:',test_cost)
 
