@@ -12,9 +12,13 @@ Does not use GPU
 """
 
 """
-TODO: 	Confirm feed_dict inputs to model file
-	Add TensorBoard functionality as well as checkpoints
+TODO: 	Add TensorBoard functionality as well as checkpoints
 	Make confusion matrix rows/cols names of classes
+	fix print accuracies 
+	Tensorboard 
+	confusion matrix 
+	log experimental params 
+	save/restore scheme
 """
 
 
