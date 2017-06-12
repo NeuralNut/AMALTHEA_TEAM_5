@@ -19,7 +19,7 @@ class Model():
         
         """Placeholders for input, labels, and sequence length"""
         self.input = tf.placeholder(tf.float32, [None, sl, 1], name = 'input') # check this. 1 because this is the number of inputs
-        self.labels = tf.placeholder(tf.int32, [None], name = 'labels')
+        self.labels = tf.placeholder(tf.int64, [None], name = 'labels')
         self.seq_length = tf.placeholder(tf.int32, [None], name = 'sequence_length')
         
         
@@ -41,47 +41,46 @@ class Model():
         
         with tf.name_scope("Softmax_function") as scope:
 
-            logits = tf.layers.dense(top_layer_h_state, classes)
+            self.logits = tf.layers.dense(top_layer_h_state, classes)
             
             #Cost Funtction, "Softmax Cross Entropy"
-            self.cost = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,
+            self.cost_confusion = tf.nn.softmax(self.logits)
+            self.cost = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
                                                                   labels=self.labels,
                                                                   name = 'softmax')
-            
             # Loss function, used to compute the gradients later on
-            self.loss = (tf.reduce_sum(self.cost) / batch_size)
-            
-            
-        # Accuracy, evaluated but not printed anywhere
-        with tf.name_scope("Evalutating_accuracy") as scope:
-            self.predictions = tf.cast(tf.argmax(logits,1), tf.int32)
-            correct = tf.equal(self.predictions, self.labels)
-            self.accuracy = tf.reduce_mean(tf.cast(correct, tf.int32))
+            self.loss = tf.reduce_mean(self.cost)
         
+        """Accuracies"""   
+        
+        with tf.name_scope("Accuracy") as scope:
+            self.predictions = tf.arg_max(self.cost_confusion,1)
+            self.correct_predictions = tf.equal(self.predictions, self.labels)
+            self.accuracy = tf.reduce_mean(tf.cast(self.correct_predictions, tf.float32))
+            
+
 #            cost_summary = tf.summary.scalar('cost', cost)
-#            accuracy_summary = tf.summary.scalar('accuracy', accuracy)
-        
+#            accuracy_summary = tf.summary.scalar('accuracy', accuracy)        
+
         """Optimizer"""
         
         with tf.name_scope("Optimizer") as scope:
-            
             #Optimizer - GradientDescentOptimizer
             optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
             
             #Gradients, computed by the optimizer
             gradients = optimizer.compute_gradients(self.loss) #returns gradients and vars
 
-            # Capping the gradients using a clipping function
+#             Capping the gradients using a clipping function
             capped_gradients = [(tf.clip_by_value(grad, 
                                                  clip_value_max=grad_max_abs, 
                                                  clip_value_min=-grad_max_abs), var )for grad, var in gradients]
 
             # Training and applying the gradients
             # We do not need to use minimize because due to gradient clipping we split into two steps
-            self.training_op = optimizer.apply_gradients(capped_gradients)
+            self.training_op = optimizer.apply_gradients(capped_gradients)            
             
-        
-        
+        # Accuracy, evaluated but not printed anywhere
         
         
         

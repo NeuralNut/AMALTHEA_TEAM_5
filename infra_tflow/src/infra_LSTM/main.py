@@ -26,6 +26,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from model import Model
+from sklearn.metrics import confusion_matrix
 
 tf.reset_default_graph()
 
@@ -66,38 +67,38 @@ def load_data(direc,ratio,dataset):
     X_train = data_train[:ratio,1:]
     X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
     train_seq = data_seq[:ratio]
-    y_train = (data_train[:ratio,0] - 1).astype(np.int32)
+    y_train = (data_train[:ratio,0]).astype(np.int32)
     X_val = data_train[ratio:,1:]
     X_val = X_val.reshape(X_val.shape[0], X_val.shape[1], 1)
     val_seq = data_seq[ratio:]
-    y_val = (data_train[ratio:,0] - 1).astype(np.int32)
+    y_val = (data_train[ratio:,0]).astype(np.int32)
     # Permute testing set
     np.random.shuffle(data_test)
     X_test = data_test[:,1:]
     X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
     test_seq = find_seq_lengths(data_test[:,1:])
-    y_test = (data_test[:,0] - 1).astype(np.int32)
+    y_test = (data_test[:,0]).astype(np.int32)
     
     return X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test
 
 # Load the desired dataset
-direc = '/home/likewise-open/FLTECH/msolomon2010/Documents/AMALTHEA_TEAM_5/infra_tflow/src/data/UCR_TS_Archive_2015'
+direc = '/home/mitch/Documents/AMALTHEA_TEAM_5/infra_tflow/src/data'
 # Splits training set into training and validation sets
 ratio = 0.8
-X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset='ChlorineConcentration')
+X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset='alaska_data')
 
 #%%
 """Define configuration of hyperparameters"""
 # Define hyperparameters also used in this file
-batch_size = np.array(30, dtype=np.int32)
+batch_size = 30
 epochs = 10
-dropout = np.array(0.8, dtype=np.float32)
-num_classes = (max(y_test) + 1).astype(np.int32)
+dropout = 0.8  
+num_classes = max(y_test) + 1
 config = {'num_layers':3, # number of hidden LSTM layers
           'hidden_size':120, # number of units in each layer
           'grad_max_abs':5, # cutoff for gradient clipping
           'batch_size':batch_size,
-          'learning_rate':0.1,
+          'learning_rate':1,
           'classes':num_classes,
           'dropout_keep_prob':dropout,
           'sl':X_train.shape[1]
@@ -114,7 +115,8 @@ def create_batches(X,y,seq_lengths,batch_size):
     # Loop over all samples in groups of batch_size
     for i in np.arange(0,X.shape[0],batch_size):
         # Make a list of batches of samples
-        yield (X[i:i+batch_size],y[i:i+batch_size],seq_lengths[i:i+batch_size])
+        B = (X[i:i+batch_size],y[i:i+batch_size],seq_lengths[i:i+batch_size])
+        yield B
 
 # initialize variables
 init = tf.global_variables_initializer()
@@ -123,47 +125,63 @@ with tf.Session() as sess:
     init.run()
     for epoch in range(epochs):
         # Iterate through each mini-batch once per epoch
-        for (batch_x,batch_y,batch_seq) in create_batches(X_train,y_train,train_seq,batch_size):
-            # Reset accuracy count
-            epoch_acc = 0
+        # Reset accuracy count
+        epoch_acc = 0
+        B = create_batches(X_train,y_train,train_seq,batch_size)
+        for (batch_x,batch_y,batch_seq) in B:
+
             # Run training on the batch
             sess.run(model.training_op,feed_dict={X:batch_x, y:batch_y,model.seq_length:batch_seq})
             # Assess and add to accuracy count
             epoch_acc += model.accuracy.eval(feed_dict={X:batch_x, y:batch_y,model.seq_length:batch_seq}) * batch_x.shape[0]
+            logits = model.logits.eval(feed_dict={X:batch_x, y:batch_y,model.seq_length:batch_seq}) 
+            cost_confusion = model.cost_confusion.eval(feed_dict={X:batch_x, y:batch_y,model.seq_length:batch_seq})
+            #print(cost_confusion)
+            
         # After going through each mini-batch, test against validation set
         validation_acc = model.accuracy.eval(feed_dict={X:X_val,y:y_val,model.seq_length:val_seq})
         # Calculate cost of validation set
-        validation_cost = model.loss.eval(feed_dict={X:X_val,y:y_val,model.seq_length:val_seq})
+        validation_loss = model.loss.eval(feed_dict={X:X_val,y:y_val,model.seq_length:val_seq})
+        
+        test_acc = model.accuracy.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
+        test_loss = model.loss.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
+
         # Print accuracy and cost updates for each epoch
-        print('#',epoch,'Epoch train accuracy:',epoch_acc/X_train.shape[0],
-              'Validation accuracy:',validation_acc,'Validation cost:',validation_cost)
+        print('%d | train_acc: %f | test_acc: %f | val_acc: %f | test_loss: %f | val_loss: %f' %(epoch,epoch_acc/X_train.shape[0],test_acc, validation_acc, test_loss, validation_loss))
 
         # Shuffle samples for next epoch
-        np.random.shuffle(X_train)
+#        np.random.shuffle(X_train)
     # Calculate cost and accuracy for final test set
-    test_acc = model.accuracy.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
-    test_cost = model.loss.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
-    test_prediction = model.predictions
+    test_prediction = model.predictions.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
+   # print(test_prediction)
+#%%
+"""Save / Restore model"""
+# Have to create a checkpoint file as such:
+# Saver for the model
+#saver = tf.train.Saver()
+#saver.saver(sess, 'Insert_Name_Here', global_step=1000)
+# Restorer
+#saver.restore(sess, tf.train.latest_checkpoint('./'))
+
     
 #%%
 """Display results"""
-print('Final accuracy:',test_acc,'Final cost:',test_cost)
+print('Final accuracy:',test_acc,'Final cost:',test_loss)
+
 
 # create confusion matrix to visualize classification errors
-confusion_matrix = tf.confusion_matrix(y_test,test_prediction)
-cf_normed = np.array(confusion_matrix,dtype=np.float32)/np.sum(confusion_matrix) * 100
+confusion_matrix_array = confusion_matrix(y_test,test_prediction)
+cf_normed = np.array(confusion_matrix_array)/np.sum(confusion_matrix_array) * 100
 width = 12
 height = 12
 plt.figure(figsize=(width,height))
-plt.imshow(
-	cf_normed,
-	interpolation='nearest',
-	cmap=plt.cm.rainbow
-	)
-
 plt.title("Confusion matrix \n(normalised to percent of total test data)")
+
+plt.imshow(cf_normed, interpolation='nearest', cmap=plt.cm.rainbow)
+
 plt.colorbar()
 tick_marks = np.arange(num_classes)
+
 # Make a list of strings of the numbered classes
 LABELS = [str(i+1) for i in range(num_classes)] # Can change later once we have name labels if we want
 plt.xticks(tick_marks, LABELS, rotation=90)
@@ -172,3 +190,5 @@ plt.tight_layout()
 plt.ylabel('True label')
 plt.xlabel('Predicted label')
 plt.show()
+
+print(confusion_matrix_array)
