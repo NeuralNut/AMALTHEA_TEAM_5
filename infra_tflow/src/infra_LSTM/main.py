@@ -17,8 +17,7 @@ TODO:
 	Tensorboard 
 	log experimental params 
 	save/restore scheme
-    What is cost_confusion?
-    Calculating training cost
+    Adaptive learning/dropout rates
 """
 
 
@@ -90,9 +89,10 @@ X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data
 #%%
 """Define configuration of hyperparameters"""
 # Define hyperparameters also used in this file
+val_increment = 5 # how many epochs between checking validation preformance
 batch_size = 30
-max_epochs = 10
-dropout = 0.8  
+max_epochs = 40
+dropout = 0.5  
 num_classes = max(y_test) + 1
 config = {'num_layers':3, # number of hidden LSTM layers
           'hidden_size':120, # number of units in each layer
@@ -129,7 +129,7 @@ with tf.Session() as sess:
     new_validation_acc = 0.1
     epoch = 1
     # Create training loop that ends when max epochs is reached or validation suffers
-    while epoch <= max_epochs and old_validation_acc < new_validation_acc:
+    while epoch <= max_epochs and old_validation_acc <= new_validation_acc:
         # Start of new epoch, reset
         epoch_acc = 0
         # Run through each mini-batch once per epoch
@@ -140,30 +140,32 @@ with tf.Session() as sess:
             # Assess and add to accuracy count
             epoch_acc += model.accuracy.eval(feed_dict={X:batch_x, y:batch_y,model.seq_length:batch_seq}) * batch_x.shape[0]
             logits = model.logits.eval(feed_dict={X:batch_x, y:batch_y,model.seq_length:batch_seq})
+            epoch_loss = model.loss.eval(feed_dict={X:X_train,y:y_train,model.seq_length:train_seq})
         # Assess validation accuracy every 3 epochs
-        if epoch % 3 == 0:
+        if epoch % val_increment == 0:
             old_validation_acc = new_validation_acc
             new_validation_acc = model.accuracy.eval(feed_dict={X:X_val,y:y_val,model.seq_length:val_seq})
             validation_loss = model.loss.eval(feed_dict={X:X_val,y:y_val,model.seq_length:val_seq})
-            print('%d | train_acc: %f | val_acc: %f | val_loss: %f' %(epoch,epoch_acc/X_train.shape[0], new_validation_acc, validation_loss))
+            print('%d | train_acc: %f | train_loss: %f | val_acc: %f | val_loss: %f' %(epoch,epoch_acc/X_train.shape[0],epoch_loss, new_validation_acc, validation_loss))
         else:
             # not a multiple of 3, just print training data
-            print('%d | train_acc: %f' %(epoch,epoch_acc/X_train.shape[0]))
+            print('%d | train_acc: %f | train_loss: %f' %(epoch,epoch_acc/X_train.shape[0],epoch_loss))
+        # TODO: save weights for each epoch
         # increment epoch counter
         epoch += 1
     # At this point, training has stopped
-    test_prediction = model.predictions.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
-    test_acc = model.accuracy.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
-    test_loss = model.loss.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
-    print('Final accuracy:',test_acc,'Final cost:',test_loss)
     # Print the reason for stopping
-    if old_validation_acc < new_validation_acc:
-        print('Model overfitted! Stopped training after epoch %d and will use weights from epoch %d'%(epoch-1,epoch-4))
+    if old_validation_acc > new_validation_acc:
+        print('Model overfitted! Stopped training after epoch %d and will use weights from epoch %d'%(epoch-1,epoch-1 - val_increment))
         # TODO: restore last set of weights
     elif epoch > max_epochs:
         print('Reached max number of epochs')
     else:
         print('not sure why we stopped')
+    test_prediction = model.predictions.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
+    test_acc = model.accuracy.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
+    test_loss = model.loss.eval(feed_dict={X:X_test,y:y_test,model.seq_length:test_seq})
+    print('Final accuracy:',test_acc,'Final cost:',test_loss)
 #%%
 """Save / Restore model"""
 # Have to create a checkpoint file as such:
