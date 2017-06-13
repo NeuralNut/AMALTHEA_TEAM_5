@@ -16,6 +16,7 @@ class Model():
         classes = parameters['classes']
         dropout_keep_prob = parameters['dropout_keep_prob']
         sl = parameters['sl']
+        logdir = parameters['logdir']
         
         """Placeholders for input, labels, and sequence length"""
         self.input = tf.placeholder(tf.float32, [None, sl, 1], name = 'input') # check this. 1 because this is the number of inputs
@@ -49,7 +50,7 @@ class Model():
                                                                   labels=self.labels,
                                                                   name = 'softmax')
             # Loss function, used to compute the gradients later on
-            self.loss = tf.reduce_mean(self.cost)
+            self.loss = tf.reduce_mean(self.cost, name='loss')
         
         """Accuracies"""   
         
@@ -79,8 +80,12 @@ class Model():
             # Training and applying the gradients
             # We do not need to use minimize because due to gradient clipping we split into two steps
             self.training_op = optimizer.apply_gradients(capped_gradients)            
-            
-        # Accuracy, evaluated but not printed anywhere
+
+        self.trainloss_summary = tf.summary.scalar('Training_Loss', self.loss)
+        self.testloss_summary = tf.summary.scalar('Test_Loss', self.loss)
+        self.valloss_summary = tf.summary.scalar('Validation_Loss', self.loss)
+        self.file_writer = tf.summary.FileWriter(logdir, tf.get_default_graph())            
+        
         
         
         
