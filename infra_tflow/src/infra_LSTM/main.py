@@ -14,10 +14,11 @@ Does not use GPU
 """
 TODO:
 	Make confusion matrix rows/cols names of classes 
-	Tensorboard 
 	log experimental params 
 	save/restore scheme
     Adaptive learning/dropout rates
+    Better validation scheme
+    Don't need to pass batch size to the model
 """
 #import packages
 import tensorflow as tf
@@ -45,10 +46,10 @@ logdir = "{}/run-{}/".format(root_logdir, now)
 
 # Load the desired dataset
 
-direc = '/home/likewise-open/FLTECH/msolomon2010/Documents/AMALTHEA_TEAM_5/infra_tflow/src/data'
+direc = '/home/emilyjensen/repos/project/shared_repo/AMALTHEA_TEAM_5/infra_tflow/src/data'
 
 # Define model save path
-save_path = '/home/likewise-open/FLTECH/msolomon2010/Documents/AMALTHEA_TEAM_5/infra_tflow/src/'
+save_path = logdir
 
 # Splits training set into training and validation sets
 ratio = 0.8
@@ -63,7 +64,7 @@ batch_size = 30
  
 
 max_epochs = 40
-dropout = 0.5  
+dropout = 1  
 num_classes = max(y_test) + 1
 config = {'num_layers':3, # number of hidden LSTM layers
           'hidden_size':120, # number of units in each layer
@@ -157,9 +158,6 @@ with tf.Session() as sess:
     model.file_writer.add_summary(val_summary_str, epoch)
     print('Final accuracy:',test_acc,'Final cost:',test_loss)
 
-
-"""Display results"""
-
     # create confusion matrix to visualize classification errors
     confusion_matrix_array = confusion_matrix(y_test,test_prediction)
     cf_normed = np.array(confusion_matrix_array)/np.sum(confusion_matrix_array) * 100
@@ -171,10 +169,10 @@ with tf.Session() as sess:
     plt.imshow(cf_normed, interpolation='nearest', cmap=plt.cm.Blues)
 
     plt.colorbar()
-    tick_marks = np.arange(num_classes - 1)
+    tick_marks = np.arange(num_classes)
 
     # Make a list of strings of the numbered classes
-    LABELS = [str(i+1) for i in range(num_classes - 1)] # Can change later once we have name labels if we want
+    LABELS = [str(i+1) for i in range(num_classes)] # Can change later once we have name labels if we want
     plt.xticks(tick_marks, LABELS, rotation=90)
     plt.yticks(tick_marks, LABELS)
     plt.tight_layout()
