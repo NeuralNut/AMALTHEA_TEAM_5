@@ -47,17 +47,17 @@ def load_data(direc,ratio,dataset):
     X_train = data_train[:ratio,1:]
     X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
     train_seq = data_seq[:ratio]
-    y_train = (data_train[:ratio,0]).astype(np.int32)
+    y_train = (data_train[:ratio,0] - 1).astype(np.int32)
     X_val = data_train[ratio:,1:]
     X_val = X_val.reshape(X_val.shape[0], X_val.shape[1], 1)
     val_seq = data_seq[ratio:]
-    y_val = (data_train[ratio:,0]).astype(np.int32)
+    y_val = (data_train[ratio:,0] - 1).astype(np.int32)
     # Permute testing set
     np.random.shuffle(data_test)
     X_test = data_test[:,1:]
     X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
     test_seq = find_seq_lengths(data_test[:,1:])
-    y_test = (data_test[:,0]).astype(np.int32)
+    y_test = (data_test[:,0] - 1).astype(np.int32)
     
     return X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test
 
