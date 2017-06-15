@@ -46,9 +46,10 @@ logdir = "{}/run-{}/".format(root_logdir, now)
 
 # Load the desired dataset
 
-direc = '/home/emilyjensen/repos/project/shared_repo/AMALTHEA_TEAM_5/infra_tflow/src/data'
+direc = str(input('Where is the dataset located? '))
 
 # Define model save path
+
 save_path = logdir
 
 # Splits training set into training and validation sets
@@ -64,7 +65,7 @@ batch_size = 30
  
 
 max_epochs = 40
-dropout = 1  
+dropout = 0.8  
 num_classes = max(y_test) + 1
 config = {'num_layers':3, # number of hidden LSTM layers
           'hidden_size':120, # number of units in each layer
@@ -158,6 +159,7 @@ with tf.Session() as sess:
     model.file_writer.add_summary(val_summary_str, epoch)
     print('Final accuracy:',test_acc,'Final cost:',test_loss)
 
+#%%    
     # create confusion matrix to visualize classification errors
     confusion_matrix_array = confusion_matrix(y_test,test_prediction)
     cf_normed = np.array(confusion_matrix_array)/np.sum(confusion_matrix_array) * 100
