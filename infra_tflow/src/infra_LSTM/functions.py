@@ -36,7 +36,6 @@ def load_data(direc,ratio,dataset):
     datadir = direc + '/' + dataset + '/' + dataset
     # Load pre-split training and testing sets
     data_train = np.loadtxt(datadir+'_TRAIN',delimiter=',').astype(np.float32)
-    data_seq = find_seq_lengths(data_train[:,1:])
     data_test = np.loadtxt(datadir+'_TEST',delimiter=',').astype(np.float32)
     # Divide training set into training and validation sets
     # First column of data is class number
@@ -44,6 +43,7 @@ def load_data(direc,ratio,dataset):
     N = data_train.shape[0]
     ratio = int(ratio*N)
     np.random.shuffle(data_train)
+    data_seq = find_seq_lengths(data_train[:,1:])
     X_train = data_train[:ratio,1:]
     X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
     train_seq = data_seq[:ratio]
