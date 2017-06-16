@@ -18,7 +18,6 @@ TODO:
 	save/restore scheme
     Adaptive learning/dropout rates
     Better validation scheme
-    Don't need to pass batch size to the model
 """
 #import packages
 import tensorflow as tf
@@ -39,7 +38,7 @@ tf.reset_default_graph()
 
 
 now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-root_logdir = "tf_logs"
+root_logdir = "tf_logs_Emily"
 logdir = "{}/run-{}/".format(root_logdir, now)
 
 
@@ -54,13 +53,14 @@ save_path = logdir
 
 # Splits training set into training and validation sets
 ratio = 0.8
-X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset='alaska_data')
+dataset='yoga'
+X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset)
 
 #%%
 """Define configuration of hyperparameters"""
 # Define hyperparameters also used in this file
 val_increment = 10 # how many epochs between checking validation preformance
-batch_size = 30
+batch_size = int(X_train.shape[0]/10) # adapt batch size to size of the dataset
 
  
 
@@ -70,7 +70,6 @@ num_classes = max(y_test) + 1
 config = {'num_layers':3, # number of hidden LSTM layers
           'hidden_size':120, # number of units in each layer
           'grad_max_abs':5, # cutoff for gradient clipping
-          'batch_size':batch_size,
           'learning_rate':0.0008,
           'classes':num_classes,
           'dropout_keep_prob':dropout,
@@ -108,7 +107,7 @@ with tf.Session() as sess:
     best_epoch = 0
     epoch = 0
     # Create training loop that ends when max epochs is reached or validation suffers
-    while epoch < max_epochs and new_validation_loss <= 0.9 * old_validation_loss:
+    while epoch < max_epochs: #and new_validation_loss <= 0.9 * old_validation_loss:
         epoch += 1
         # Start of new epoch, reset
         epoch_acc = 0
@@ -157,8 +156,9 @@ with tf.Session() as sess:
     if new_validation_loss > 0.9 * old_validation_loss:
         print('Model overfitted! Stopped training after epoch %d and will use weights from epoch %d'%(epoch,best_epoch))
         # TODO: restore last set of weights
-    elif epoch > max_epochs:
+    elif epoch >= max_epochs:
         print('Reached max number of epochs')
+        print('Best epoch was %d'%(best_epoch))
     else:
         print('not sure why we stopped')
     test_prediction = model.predictions.eval(feed_dict=test_dict)
@@ -172,7 +172,7 @@ with tf.Session() as sess:
     width = 5
     height = 5
     plt.figure(figsize=(width,height))
-    plt.title("Confusion matrix \n(normalised to percent of total test data)")
+    plt.title("%s \n Test accuracy: %f"%(dataset,test_acc))
 
     plt.imshow(cf_normed, interpolation='nearest', cmap=plt.cm.Blues)
 
