@@ -11,7 +11,6 @@ class Model():
         num_layers = parameters['num_layers']
         hidden_size = parameters['hidden_size']
         grad_max_abs = parameters['grad_max_abs']
-        batch_size = parameters['batch_size']
         learning_rate = parameters['learning_rate']
         classes = parameters['classes']
         dropout_keep_prob = parameters['dropout_keep_prob']
