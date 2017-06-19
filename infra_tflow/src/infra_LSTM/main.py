@@ -38,7 +38,7 @@ tf.reset_default_graph()
 
 
 now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-root_logdir = "tf_logs_Emily"
+root_logdir = "tf_logs_Mitch"
 logdir = "{}/run-{}/".format(root_logdir, now)
 
 
@@ -53,7 +53,7 @@ save_path = logdir
 
 # Splits training set into training and validation sets
 ratio = 0.8
-dataset='yoga'
+dataset='Two_Patterns'
 X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset)
 
 #%%
@@ -64,7 +64,7 @@ batch_size = int(X_train.shape[0]/10) # adapt batch size to size of the dataset
 
  
 
-max_epochs = 100
+max_epochs = 10
 dropout = 0.8  
 num_classes = max(y_test) + 1
 config = {'num_layers':3, # number of hidden LSTM layers
@@ -99,7 +99,6 @@ with tf.Session() as sess:
     init.run()
 
     
-
     # Create initial values to start the loop
     old_validation_loss = 0.1
     new_validation_loss = 0
@@ -107,7 +106,7 @@ with tf.Session() as sess:
     best_epoch = 0
     epoch = 0
     # Create training loop that ends when max epochs is reached or validation suffers
-    while epoch < max_epochs: #and new_validation_loss <= 0.9 * old_validation_loss:
+    while epoch < max_epochs:# and new_validation_loss <= 0.9 * old_validation_loss:
         epoch += 1
         # Start of new epoch, reset
         epoch_acc = 0
@@ -151,7 +150,12 @@ with tf.Session() as sess:
         model.file_writer.add_summary(train_summary_str, epoch)
         model.file_writer.add_summary(test_summary_str, epoch)
         model.file_writer.add_summary(val_summary_str, epoch)
-    
+        
+        i = epoch
+        for i in range(max_epochs): 
+            if i % 5 == 0: # Checkpoint every 5 epochs 
+                save_to = saver.save(sess, save_path)
+
     # Print the reason for stopping
     if new_validation_loss > 0.9 * old_validation_loss:
         print('Model overfitted! Stopped training after epoch %d and will use weights from epoch %d'%(epoch,best_epoch))
