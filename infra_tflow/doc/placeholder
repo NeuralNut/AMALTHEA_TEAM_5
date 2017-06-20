@@ -1,0 +1,5 @@
+tf.placeholder('float')
+
+confusion matrix figures
+other figures
+csv loss functions for best runs
