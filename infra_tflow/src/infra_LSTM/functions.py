@@ -12,7 +12,7 @@ Created on Tue Jun 13 11:04:17 2017
 import numpy as np
 
 """Load and prepare data"""
-# Define function for creating sequence length vectors and adding zero buffers
+# Define function for creating sequence length vectors
 def find_seq_lengths(X):
     N,max_length = X.shape
     seq_lengths = np.zeros(N)

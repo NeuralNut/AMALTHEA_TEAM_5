@@ -100,8 +100,8 @@ with tf.Session() as sess:
 
     
     # Create initial values to start the loop
-    old_validation_loss = 0.1
-    new_validation_loss = 0
+    old_validation_loss = 100
+    new_validation_loss = 90
     best_val_acc = 0
     best_epoch = 0
     epoch = 0
