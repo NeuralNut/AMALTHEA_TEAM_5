@@ -53,7 +53,7 @@ save_path = logdir
 
 # Splits training set into training and validation sets
 ratio = 0.8
-dataset='yoga'
+dataset='alaska_data'
 X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset)
 
 #%%
@@ -101,13 +101,13 @@ with tf.Session() as sess:
     
 
     # Create initial values to start the loop
-    old_validation_loss = 0.1
-    new_validation_loss = 0
+    old_validation_loss = 100
+    new_validation_loss = 90
     best_val_acc = 0
     best_epoch = 0
     epoch = 0
     # Create training loop that ends when max epochs is reached or validation suffers
-    while epoch < max_epochs: #and new_validation_loss <= 0.9 * old_validation_loss:
+    while epoch < max_epochs and new_validation_loss <= 0.95 * old_validation_loss:
         epoch += 1
         # Start of new epoch, reset
         epoch_acc = 0
