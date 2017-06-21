@@ -13,7 +13,6 @@ class Model():
         grad_max_abs = parameters['grad_max_abs']
         learning_rate = parameters['learning_rate']
         classes = parameters['classes']
-        dropout_keep_prob = parameters['dropout_keep_prob']
         sl = parameters['sl']
         logdir = parameters['logdir']
         
@@ -21,6 +20,7 @@ class Model():
         self.input = tf.placeholder(tf.float32, [None, sl, 1], name = 'input') # check this. 1 because this is the number of inputs
         self.labels = tf.placeholder(tf.int64, [None], name = 'labels')
         self.seq_length = tf.placeholder(tf.int32, [None], name = 'sequence_length')
+        self.keep_prob = tf.placeholder(tf.float32)
         
         
         # LSTM Cell, with Dropout probability
@@ -29,7 +29,7 @@ class Model():
                 return tf.contrib.rnn.DropoutWrapper(
                         tf.contrib.rnn.LSTMCell(hidden_size, use_peepholes=True, 
                                                 initializer=tf.contrib.layers.xavier_initializer()), 
-                        output_keep_prob=dropout_keep_prob)
+                        output_keep_prob=self.keep_prob)
             
             # LSTM cell network, defined by the combination of cells
             multi_cell = tf.contrib.rnn.MultiRNNCell([LSTM_cell() for _ in range(num_layers)])

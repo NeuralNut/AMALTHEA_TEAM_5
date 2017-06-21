@@ -14,8 +14,7 @@ Does not use GPU
 """
 TODO:
 	Make confusion matrix rows/cols names of classes 
-	log experimental params 
-	save/restore scheme
+	log experimental params
     Adaptive learning/dropout rates
     Better validation scheme
 """
