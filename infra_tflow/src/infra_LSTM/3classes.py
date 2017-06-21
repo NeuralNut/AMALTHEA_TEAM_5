@@ -31,6 +31,7 @@ tf.reset_default_graph()
 now = datetime.utcnow().strftime("%Y%m%d%H%M%S") 
 root_logdir = "tf_logs_Emily" 
 logdir = "{}/run-{}/".format(root_logdir, now) 
+save_path = logdir
  
 def find_seq_lengths(X): 
     N,max_length = X.shape 
