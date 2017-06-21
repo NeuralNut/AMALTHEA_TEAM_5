@@ -38,7 +38,7 @@ tf.reset_default_graph()
 
 
 now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-root_logdir = "tf_logs_Emily"
+root_logdir = "tf_logs_Mitch"
 logdir = "{}/run-{}/".format(root_logdir, now)
 
 
@@ -53,7 +53,7 @@ save_path = logdir
 
 # Splits training set into training and validation sets
 ratio = 0.8
-dataset='alaska_data'
+dataset='Two_Patterns'
 X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset)
 
 #%%
@@ -65,12 +65,12 @@ batch_size = int(X_train.shape[0]/10) # adapt batch size to size of the dataset
  
 
 max_epochs = 100
-dropout = 0.8  
+dropout = 0.2  
 num_classes = max(y_test) + 1
-config = {'num_layers':3, # number of hidden LSTM layers
-          'hidden_size':120, # number of units in each layer
+config = {'num_layers':2, # number of hidden LSTM layers
+          'hidden_size':500, # number of units in each layer
           'grad_max_abs':5, # cutoff for gradient clipping
-          'learning_rate':0.0008,
+          'learning_rate':0.001,
           'classes':num_classes,
           'dropout_keep_prob':dropout,
           'sl':X_train.shape[1],
@@ -99,7 +99,6 @@ with tf.Session() as sess:
     init.run()
 
     
-
     # Create initial values to start the loop
     old_validation_loss = 100
     new_validation_loss = 90
@@ -107,10 +106,11 @@ with tf.Session() as sess:
     best_epoch = 0
     epoch = 0
     # Create training loop that ends when max epochs is reached or validation suffers
-    while epoch < max_epochs and new_validation_loss <= 0.95 * old_validation_loss:
+    while epoch < max_epochs:# and new_validation_loss <= 0.9 * old_validation_loss:
         epoch += 1
         # Start of new epoch, reset
         epoch_acc = 0
+        epoch_loss = 0
         # Run through each mini-batch once per epoch
 
         B = create_batches(X_train,y_train,train_seq,batch_size)
@@ -124,22 +124,22 @@ with tf.Session() as sess:
 
             epoch_acc += model.accuracy.eval(feed_dict=train_dict) * batch_x.shape[0]
             logits = model.logits.eval(feed_dict=train_dict)
-            epoch_loss = model.loss.eval(feed_dict=train_dict)
+            epoch_loss += model.loss.eval(feed_dict=train_dict)
             
         # Check to see if this epoch is the best performing one yet
         current_val_acc = model.accuracy.eval(feed_dict=val_dict)
-        if current_val_acc >= best_val_acc:
+        if current_val_acc > best_val_acc:
             best_val_acc = current_val_acc
             best_epoch = epoch
+            save_to = saver.save(sess, save_path)
         # Assess validation loss every so often
         if epoch % val_increment == 0:
             old_validation_loss = new_validation_loss
             new_validation_loss = model.loss.eval(feed_dict=val_dict)
-            print('%d | train_acc: %f | train_loss: %f | val_acc: %f | val_loss: %f' %(epoch,epoch_acc/X_train.shape[0],epoch_loss, current_val_acc, new_validation_loss))
+            print('%d | train_acc: %f | train_loss: %f | val_acc: %f | val_loss: %f' %(epoch,epoch_acc/X_train.shape[0],epoch_loss/X_train.shape[0], current_val_acc, new_validation_loss))
         else:
             # not a multiple of the increment, just print training data
-            print('%d | train_acc: %f | train_loss: %f | val_acc: %f' %(epoch,epoch_acc/X_train.shape[0],epoch_loss,current_val_acc))
-        # TODO: save weights for each epoch
+            print('%d | train_acc: %f | train_loss: %f | val_acc: %f' %(epoch,epoch_acc/X_train.shape[0],epoch_loss/X_train.shape[0],current_val_acc))
     
         # At this point, training has stopped
         # Create train, test, and summary strings
@@ -151,16 +151,17 @@ with tf.Session() as sess:
         model.file_writer.add_summary(train_summary_str, epoch)
         model.file_writer.add_summary(test_summary_str, epoch)
         model.file_writer.add_summary(val_summary_str, epoch)
-    
+
     # Print the reason for stopping
-    if new_validation_loss > 0.9 * old_validation_loss:
+    if new_validation_loss > 0.95 * old_validation_loss:
         print('Model overfitted! Stopped training after epoch %d and will use weights from epoch %d'%(epoch,best_epoch))
-        # TODO: restore last set of weights
     elif epoch >= max_epochs:
         print('Reached max number of epochs')
         print('Best epoch was %d'%(best_epoch))
     else:
         print('not sure why we stopped')
+        
+    saver.restore(sess,save_path)
     test_prediction = model.predictions.eval(feed_dict=test_dict)
     test_acc = model.accuracy.eval(feed_dict=test_dict)
     test_loss = model.loss.eval(feed_dict=test_dict)

@@ -27,7 +27,8 @@ class Model():
         with tf.name_scope('LSTM_setup') as scope:
             def LSTM_cell():
                 return tf.contrib.rnn.DropoutWrapper(
-                        tf.contrib.rnn.LSTMCell(hidden_size), 
+                        tf.contrib.rnn.LSTMCell(hidden_size, use_peepholes=True, 
+                                                initializer=tf.contrib.layers.xavier_initializer()), 
                         output_keep_prob=dropout_keep_prob)
             
             # LSTM cell network, defined by the combination of cells
