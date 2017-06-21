@@ -64,13 +64,13 @@ batch_size = int(X_train.shape[0]/10) # adapt batch size to size of the dataset
 
  
 
-max_epochs = 10
-dropout = 0.8  
+max_epochs = 100
+dropout = 0.2  
 num_classes = max(y_test) + 1
-config = {'num_layers':3, # number of hidden LSTM layers
-          'hidden_size':120, # number of units in each layer
+config = {'num_layers':2, # number of hidden LSTM layers
+          'hidden_size':500, # number of units in each layer
           'grad_max_abs':5, # cutoff for gradient clipping
-          'learning_rate':0.0008,
+          'learning_rate':0.001,
           'classes':num_classes,
           'dropout_keep_prob':dropout,
           'sl':X_train.shape[1],
@@ -110,6 +110,7 @@ with tf.Session() as sess:
         epoch += 1
         # Start of new epoch, reset
         epoch_acc = 0
+        epoch_loss = 0
         # Run through each mini-batch once per epoch
 
         B = create_batches(X_train,y_train,train_seq,batch_size)

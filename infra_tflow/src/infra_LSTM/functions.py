@@ -50,34 +50,21 @@ def load_data(direc,ratio,dataset_name):
     np.random.shuffle(data_train)
     np.random.shuffle(data_test)
     
-    if np.min(data_train[:,0]) == 1.0:
-        y_train = (data_train[:ratio,0] - 1).astype(np.int32)
-        y_val = (data_train[ratio:,0] - 1).astype(np.int32)
-        y_test = (data_test[:,0] - 1).astype(np.int32)
-        print('The raw data targets are %d indexed and were converted to 0 index ' %(np.min(data_train[:,0])))
-
-    elif np.min(data_train[:,0]) == 0.0:
-        y_train = (data_train[:ratio,0]).astype(np.int32)
-        y_val = (data_train[ratio:,0]).astype(np.int32)
-        y_test = (data_test[:,0]).astype(np.int32)
+    #split labels based on ratio
+    y_train = (data_train[:ratio,0]).astype(np.int32)
+    y_val = (data_train[ratio:,0]).astype(np.int32)
+    y_test = (data_test[:,0]).astype(np.int32)
     
-    elif np.min(data_train[:,0]) == -1.0:
-        i=0
-        for i in np.where(data_train[:,0]==-1):
-            data_train[i,0] = data_train[i,0] + 1
-        
-        j=0
-        for j in np.where(data_test[:,0]==-1):
-            data_test[j,0] = data_test[j,0] + 1
-        print('Binary index -1, 1 changed to 0 indexed')
-        
-        y_train = (data_train[:ratio,0]).astype(np.int32)
-        y_val = (data_train[ratio:,0]).astype(np.int32)
-        y_test = (data_test[:,0]).astype(np.int32)
+    # 0 index all labels
+    nb_classes = len(np.unique(y_test))
+    y_train = ((y_train - y_train.min())/(y_train.max()-y_train.min())*(nb_classes-1)).astype(np.int32)
+    y_test = ((y_test - y_test.min())/(y_test.max()-y_test.min())*(nb_classes-1)).astype(np.int32)
+    y_val = ((y_val - y_val.min())/(y_val.max()-y_val.min())*(nb_classes-1)).astype(np.int32)
 
-    else:
-        print('Something may have gone wrong in load_data')
+    #find the length of each sequence
     data_seq = find_seq_lengths(data_train[:,1:])
+    
+    #split data based on ratio
     X_train = data_train[:ratio,1:]
     X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
     train_seq = data_seq[:ratio]
@@ -88,7 +75,15 @@ def load_data(direc,ratio,dataset_name):
     X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
     test_seq = find_seq_lengths(data_test[:,1:])
     
+    # z-normalize the test/train/val data
+    X_train = (X_train - X_train.mean())/X_train.std()
+    X_test = (X_test - X_test.mean())/X_test.std()
+    X_val = (X_val - X_val.mean())/X_test.std()
+    
     return X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test
+
+
+
 # Define function to divide training data into mini-batches
 def create_batches(X,y,seq_lengths,batch_size):
     # Loop over all samples in groups of batch_size
