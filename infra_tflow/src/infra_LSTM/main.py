@@ -64,14 +64,13 @@ batch_size = int(X_train.shape[0]/10) # adapt batch size to size of the dataset
  
 
 max_epochs = 100
-dropout = 0.2  
+dropout = 0.8  
 num_classes = max(y_test) + 1
-config = {'num_layers':2, # number of hidden LSTM layers
-          'hidden_size':500, # number of units in each layer
+config = {'num_layers':3, # number of hidden LSTM layers
+          'hidden_size':120, # number of units in each layer
           'grad_max_abs':5, # cutoff for gradient clipping
-          'learning_rate':0.001,
+          'learning_rate':0.0008,
           'classes':num_classes,
-          'dropout_keep_prob':dropout,
           'sl':X_train.shape[1],
           'logdir': logdir
         }
@@ -82,21 +81,19 @@ X = model.input
 y = model.labels
 
 
-test_dict = {X:X_test,y:y_test,model.seq_length:test_seq}
-val_dict = {X:X_val,y:y_val,model.seq_length:val_seq}
+test_dict = {X:X_test,y:y_test,model.seq_length:test_seq,model.keep_prob:1}
+val_dict = {X:X_val,y:y_val,model.seq_length:val_seq,model.keep_prob:1}
 
 print('Computational graph complete!')
 #%%
 """Train the model"""
 # initialize variables
 init = tf.global_variables_initializer()
-saver = tf.train.Saver()
-
 
 with tf.Session() as sess:
     # Initialize variables
     init.run()
-
+    saver = tf.train.Saver()
     
     # Create initial values to start the loop
     old_validation_loss = 100
@@ -105,7 +102,7 @@ with tf.Session() as sess:
     best_epoch = 0
     epoch = 0
     # Create training loop that ends when max epochs is reached or validation suffers
-    while epoch < max_epochs:# and new_validation_loss <= 0.9 * old_validation_loss:
+    while epoch < max_epochs and new_validation_loss <= 0.95 * old_validation_loss:
         epoch += 1
         # Start of new epoch, reset
         epoch_acc = 0
@@ -115,7 +112,7 @@ with tf.Session() as sess:
         B = create_batches(X_train,y_train,train_seq,batch_size)
         
         for (batch_x,batch_y,batch_seq) in B:
-            train_dict = {X:batch_x, y:batch_y,model.seq_length:batch_seq}
+            train_dict = {X:batch_x, y:batch_y,model.seq_length:batch_seq,model.keep_prob:dropout}
             
             # Run training on the batch
             sess.run(model.training_op,feed_dict=train_dict)
@@ -140,9 +137,8 @@ with tf.Session() as sess:
             # not a multiple of the increment, just print training data
             print('%d | train_acc: %f | train_loss: %f | val_acc: %f' %(epoch,epoch_acc/X_train.shape[0],epoch_loss/X_train.shape[0],current_val_acc))
     
-        # At this point, training has stopped
         # Create train, test, and summary strings
-        train_summary_str = model.trainloss_summary.eval(feed_dict={X:X_train, y:y_train,model.seq_length:train_seq})
+        train_summary_str = model.trainloss_summary.eval(feed_dict={X:X_train, y:y_train,model.seq_length:train_seq,model.keep_prob:dropout})
         test_summary_str = model.testloss_summary.eval(feed_dict=test_dict)
         val_summary_str = model.valloss_summary.eval(feed_dict=val_dict) 
         
@@ -151,16 +147,18 @@ with tf.Session() as sess:
         model.file_writer.add_summary(test_summary_str, epoch)
         model.file_writer.add_summary(val_summary_str, epoch)
 
+    # At this point, training has stopped
     # Print the reason for stopping
     if new_validation_loss > 0.95 * old_validation_loss:
-        print('Model overfitted! Stopped training after epoch %d and will use weights from epoch %d'%(epoch,best_epoch))
+        print('Performance stopped improving at epoch %d. Restore weights from epoch %d'%(epoch,best_epoch))
     elif epoch >= max_epochs:
         print('Reached max number of epochs')
         print('Best epoch was %d'%(best_epoch))
     else:
         print('not sure why we stopped')
-        
+    #restore best epoch
     saver.restore(sess,save_path)
+    print('Restore successful!')
     test_prediction = model.predictions.eval(feed_dict=test_dict)
     test_acc = model.accuracy.eval(feed_dict=test_dict)
     test_loss = model.loss.eval(feed_dict=test_dict)
