@@ -34,14 +34,15 @@ from functions import load_data
 from functions import create_batches
 from functions import list_UCR_datasets
 
-now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
 root_logdir = "tf_logs_Mitch"
-logdir = "{}/run-{}/".format(root_logdir, now)
 root_direc = str(input('Where is the dataset located? '))
 direc_list = list_UCR_datasets(root_direc)
 
 # Load the desired dataset
 for dataset_name in direc_list:
+    now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    logdir = "{}/run-{}/".format(root_logdir, now)
+    
     tf.reset_default_graph()
     
     # Define model save path
@@ -191,4 +192,4 @@ for dataset_name in direc_list:
         model.file_writer.add_summary(summary)
         model.file_writer.close()
         print(confusion_matrix_array)
-
+        sess.close()
