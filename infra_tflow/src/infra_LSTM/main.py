@@ -124,7 +124,7 @@ with tf.Session() as sess:
             
         # Check to see if this epoch is the best performing one yet
         current_val_acc = model.accuracy.eval(feed_dict=val_dict)
-        if current_val_acc > best_val_acc:
+        if current_val_acc >= best_val_acc:
             best_val_acc = current_val_acc
             best_epoch = epoch
             save_to = saver.save(sess, save_path)
