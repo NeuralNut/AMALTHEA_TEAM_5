@@ -29,15 +29,15 @@ import io
 
 # import user-defined functions
 from model import Model
-from functions import load_data
-from functions import create_batches
+import functions as f
+import functions_features as ff
 
 
 tf.reset_default_graph()
 
 
 now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-root_logdir = "tf_logs_Mitch"
+root_logdir = "tf_logs_Emily"
 logdir = "{}/run-{}/".format(root_logdir, now)
 
 
@@ -52,8 +52,12 @@ save_path = logdir
 
 # Splits training set into training and validation sets
 ratio = 0.8
-dataset='Two_Patterns'
-X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = load_data(direc,ratio,dataset)
+dataset='Adiac'
+use_features = direc.endswith('Features')
+if use_features:
+    X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = ff.load_data(direc,ratio,dataset)
+else:
+    X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = f.load_data(direc,ratio,dataset)
 
 #%%
 """Define configuration of hyperparameters"""
@@ -63,7 +67,7 @@ batch_size = int(X_train.shape[0]/10) # adapt batch size to size of the dataset
 
  
 
-max_epochs = 100
+max_epochs = 50
 dropout = 0.8  
 num_classes = max(y_test) + 1
 config = {'num_layers':3, # number of hidden LSTM layers
@@ -109,7 +113,7 @@ with tf.Session() as sess:
         epoch_loss = 0
         # Run through each mini-batch once per epoch
 
-        B = create_batches(X_train,y_train,train_seq,batch_size)
+        B = f.create_batches(X_train,y_train,train_seq,batch_size)
         
         for (batch_x,batch_y,batch_seq) in B:
             train_dict = {X:batch_x, y:batch_y,model.seq_length:batch_seq,model.keep_prob:dropout}

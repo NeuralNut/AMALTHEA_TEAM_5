@@ -17,7 +17,7 @@ class Model():
         logdir = parameters['logdir']
         
         """Placeholders for input, labels, and sequence length"""
-        self.input = tf.placeholder(tf.float32, [None, sl, 1], name = 'input') # check this. 1 because this is the number of inputs
+        self.input = tf.placeholder(tf.float32, [None, sl, 11], name = 'input') # check this. 1 because this is the number of inputs
         self.labels = tf.placeholder(tf.int64, [None], name = 'labels')
         self.seq_length = tf.placeholder(tf.int32, [None], name = 'sequence_length')
         self.keep_prob = tf.placeholder(tf.float32)
