@@ -6,11 +6,12 @@ Created on Tue Jun 13 11:04:17 2017
 @author: msolomon2010
 """
 
-
-#%%
-
 import numpy as np
 import os
+import matplotlib.pyplot as plt
+import io
+from sklearn.metrics import confusion_matrix
+import tensorflow as tf
 
 def list_UCR_datasets(direc):
     return [name for name in os.listdir(direc)]
@@ -91,3 +92,39 @@ def create_batches(X,y,seq_lengths,batch_size):
         # Make a list of batches of samples
         B = (X[i:i+batch_size],y[i:i+batch_size],seq_lengths[i:i+batch_size])
         yield B
+
+# Define function to create and save confusion matric
+def create_confusion_matrix(y_test,test_prediction,num_classes,sess,model,epoch):
+    # create confusion matrix to visualize classification errors
+    confusion_matrix_array = confusion_matrix(y_test,test_prediction)
+    cf_normed = np.array(confusion_matrix_array)/np.sum(confusion_matrix_array) * 100
+    width = 5
+    height = 5
+    plt.figure(figsize=(width,height))
+    plt.title("Confusion Matrix")
+
+    plt.imshow(cf_normed, interpolation='nearest', cmap=plt.cm.Blues)
+
+    plt.colorbar()
+    tick_marks = np.arange(num_classes)
+
+    # Make a list of strings of the numbered classes
+    LABELS = [str(i+1) for i in range(num_classes)] # Can change later once we have name labels if we want
+    plt.xticks(tick_marks, LABELS, rotation=90)
+    plt.yticks(tick_marks, LABELS)
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    
+    plt.savefig('./matrices/matrix%d.png'%(epoch))
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    image = tf.image.decode_png(buf.getvalue(), channels=4)
+    image = tf.expand_dims(image, 0)
+    summary_op = tf.summary.image("Confusion_Matrix", image)
+    summary = sess.run(summary_op)
+    model.file_writer.add_summary(summary)
+    model.file_writer.close()
+    #print(confusion_matrix_array)

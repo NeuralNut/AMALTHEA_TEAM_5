@@ -20,15 +20,13 @@ TODO:
 """
 #import packages
 import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
 from datetime import datetime
-import io
+
 
 
 # import user-defined functions
 from model import Model
+from model_features import FeaturesModel
 import functions as f
 import functions_features as ff
 
@@ -52,7 +50,7 @@ save_path = logdir
 
 # Splits training set into training and validation sets
 ratio = 0.8
-dataset='Adiac'
+dataset='alaska_data'
 use_features = direc.endswith('Features')
 if use_features:
     X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test = ff.load_data(direc,ratio,dataset)
@@ -80,7 +78,11 @@ config = {'num_layers':3, # number of hidden LSTM layers
         }
 
 """Create a new model object (construction phase)"""
-model = Model(config)
+if use_features:
+    model = FeaturesModel(config)
+else:
+    model = Model(config)
+
 X = model.input
 y = model.labels
 
@@ -150,6 +152,10 @@ with tf.Session() as sess:
         model.file_writer.add_summary(train_summary_str, epoch)
         model.file_writer.add_summary(test_summary_str, epoch)
         model.file_writer.add_summary(val_summary_str, epoch)
+        
+        test_prediction = model.predictions.eval(feed_dict=test_dict)
+        # create and save a confusion matrix image
+        f.create_confusion_matrix(y_test,test_prediction,num_classes,sess,model,epoch)
 
     # At this point, training has stopped
     # Print the reason for stopping
@@ -167,36 +173,6 @@ with tf.Session() as sess:
     test_acc = model.accuracy.eval(feed_dict=test_dict)
     test_loss = model.loss.eval(feed_dict=test_dict)
     print('Final accuracy:',test_acc,'Final cost:',test_loss)
-
-    # create confusion matrix to visualize classification errors
-    confusion_matrix_array = confusion_matrix(y_test,test_prediction)
-    cf_normed = np.array(confusion_matrix_array)/np.sum(confusion_matrix_array) * 100
-    width = 5
-    height = 5
-    plt.figure(figsize=(width,height))
-    plt.title("%s \n Test accuracy: %f"%(dataset,test_acc))
-
-    plt.imshow(cf_normed, interpolation='nearest', cmap=plt.cm.Blues)
-
-    plt.colorbar()
-    tick_marks = np.arange(num_classes)
-
-    # Make a list of strings of the numbered classes
-    LABELS = [str(i+1) for i in range(num_classes)] # Can change later once we have name labels if we want
-    plt.xticks(tick_marks, LABELS, rotation=90)
-    plt.yticks(tick_marks, LABELS)
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-    image = tf.image.decode_png(buf.getvalue(), channels=4)
-    image = tf.expand_dims(image, 0)
-    summary_op = tf.summary.image("Confusion_Matrix", image)
-    summary = sess.run(summary_op)
-    model.file_writer.add_summary(summary)
-    model.file_writer.close()
-    print(confusion_matrix_array)
+    
+    
 
