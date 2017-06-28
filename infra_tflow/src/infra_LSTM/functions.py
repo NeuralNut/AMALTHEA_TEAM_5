@@ -79,7 +79,7 @@ def load_data(direc,ratio,dataset_name):
     # z-normalize the test/train/val data
     X_train = (X_train - X_train.mean())/X_train.std()
     X_test = (X_test - X_test.mean())/X_test.std()
-    X_val = (X_val - X_val.mean())/X_test.std()
+    X_val = (X_val - X_val.mean())/X_val.std()
     
     return X_train,train_seq,X_val,val_seq,X_test,test_seq,y_train,y_val,y_test
 
