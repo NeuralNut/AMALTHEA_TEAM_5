@@ -65,7 +65,7 @@ batch_size = int(X_train.shape[0]/10) # adapt batch size to size of the dataset
 
  
 
-max_epochs = 50
+max_epochs = 3
 dropout = 0.8  
 num_classes = max(y_test) + 1
 config = {'num_layers':3, # number of hidden LSTM layers
@@ -155,7 +155,7 @@ with tf.Session() as sess:
         
         test_prediction = model.predictions.eval(feed_dict=test_dict)
         # create and save a confusion matrix image
-        f.create_confusion_matrix(y_test,test_prediction,num_classes,sess,model,epoch)
+        f.create_confusion_matrix(y_test,test_prediction,num_classes,sess,model,epoch,dataset)
 
     # At this point, training has stopped
     # Print the reason for stopping
@@ -173,6 +173,4 @@ with tf.Session() as sess:
     test_acc = model.accuracy.eval(feed_dict=test_dict)
     test_loss = model.loss.eval(feed_dict=test_dict)
     print('Final accuracy:',test_acc,'Final cost:',test_loss)
-    
-    
-
+    model.file_writer.close()

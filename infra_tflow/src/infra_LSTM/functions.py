@@ -94,18 +94,17 @@ def create_batches(X,y,seq_lengths,batch_size):
         yield B
 
 # Define function to create and save confusion matric
-def create_confusion_matrix(y_test,test_prediction,num_classes,sess,model,epoch):
+def create_confusion_matrix(y_test,test_prediction,num_classes,sess,model,epoch,dataset):
     # create confusion matrix to visualize classification errors
     confusion_matrix_array = confusion_matrix(y_test,test_prediction)
     cf_normed = np.array(confusion_matrix_array)/np.sum(confusion_matrix_array) * 100
     width = 5
     height = 5
     plt.figure(figsize=(width,height))
-    plt.title("Confusion Matrix")
+    plt.title("%s Confusion Matrix"%(dataset))
 
     plt.imshow(cf_normed, interpolation='nearest', cmap=plt.cm.Blues)
 
-    plt.colorbar()
     tick_marks = np.arange(num_classes)
 
     # Make a list of strings of the numbered classes
@@ -116,7 +115,7 @@ def create_confusion_matrix(y_test,test_prediction,num_classes,sess,model,epoch)
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     
-    plt.savefig('./matrices/matrix%d.png'%(epoch))
+    plt.savefig('./matrices/matrix%d.png'%(epoch),bbox_inches='tight')
 
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
@@ -126,5 +125,5 @@ def create_confusion_matrix(y_test,test_prediction,num_classes,sess,model,epoch)
     summary_op = tf.summary.image("Confusion_Matrix", image)
     summary = sess.run(summary_op)
     model.file_writer.add_summary(summary)
-    model.file_writer.close()
+    plt.close()
     #print(confusion_matrix_array)
